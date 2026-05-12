@@ -1,0 +1,3 @@
+[submodule "byte-stuffing"]
+	path = byte-stuffing
+	url = https://github.com/ocanath/byte-stuffing

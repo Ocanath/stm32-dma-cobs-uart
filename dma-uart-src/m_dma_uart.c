@@ -21,9 +21,66 @@
 /*CR1 bits*/
 #define TXEIE		(1 << 7)
 
+int init_dma_uart(dma_uart_t * h,
+		USART_TypeDef * Instance,
+		DMA_Channel_TypeDef * rxdma,
+		DMA_Channel_TypeDef * txdma,
+		unsigned char * rx_encoded_mem,
+		size_t rx_encoded_mem_size,
+		unsigned char * rx_decoded_mem,
+		size_t rx_decoded_mem_size,
+		unsigned char * tx_mem,
+		size_t tx_mem_size)
+{
+	if(h == NULL ||
+		Instance == NULL ||
+		rxdma == NULL ||
+		txdma == NULL ||
+		rx_encoded_mem == NULL ||
+		rx_decoded_mem == NULL ||
+		tx_mem == NULL)
+	{
+		return -1;
+	}
+	h->Instance = Instance;
+	h->rxdma = rxdma;
+	h->txdma = txdma;
+	h->rx_mem = (cobs_buf_t){
+		.buf = rx_encoded_mem,
+		.size =  rx_encoded_mem_size,
+		.length = 0,
+		.encoded_state = COBS_ENCODED
+	};
+	h->rx_decoded = (cobs_buf_t){
+			.buf = rx_decoded_mem,
+			.size = rx_decoded_mem_size,
+			.length = 0,
+			.encoded_state = COBS_DECODED
+	};
+	h->rx_decode_alias = (dartt_buffer_t){
+			.buf = rx_decoded_mem,
+			.size = rx_decoded_mem_size,
+			.len = 0
+	};
+	h->rx_pld_msg = (payload_layer_msg_t){};
+	h->tx_mem = (cobs_buf_t){
+			.buf = tx_mem,//gl_tx_mem,
+			.size = tx_mem_size,
+			.length = 0,
+			.encoded_state = COBS_DECODED
+	};
+	h->tx_buf_alias = (dartt_buffer_t){
+			.buf = tx_mem,
+			.size = tx_mem_size,
+			.len = 0
+	};
+
+	return 0;
+}
+
 
 /**/
-void m_uart_start_interrupts(uart_it_t * h)
+void m_uart_start_interrupts(dma_uart_t * h)
 {
 //	h->Instance->CR1 |= (1 << 5) | (1 << 7) | (1 << 2) | (1 << 3);       //enable rxneie, txeie, RE and TE
 //	h->Instance->CR1 &= ~(1 << 7);       //disable TX interrupt
@@ -55,13 +112,13 @@ void m_uart_start_interrupts(uart_it_t * h)
 
 
 /**/
-void m_uart_disable_rx_interrupt(uart_it_t * h)
+void m_uart_disable_rx_interrupt(dma_uart_t * h)
 {
 	h->Instance->CR1 &= ~USART_CR1_RXNEIE;
 }
 
 /**/
-void m_uart_enable_rx_interrupt(uart_it_t * h)
+void m_uart_enable_rx_interrupt(dma_uart_t * h)
 {
 	h->Instance->CR1 |= USART_CR1_RXNEIE;
 }
@@ -74,7 +131,7 @@ void m_uart_enable_rx_interrupt(uart_it_t * h)
  *
  * Idea: simultaneously do PPP unstuffing
  * */
-void m_uart_it_handler(uart_it_t * h)
+void m_uart_it_handler(dma_uart_t * h)
 {
 	uint16_t rdr = (uint16_t)h->Instance->RDR;	//read RDR, thus clearing the associated interrupt flag
 	if(rdr == 0)	//rxne will always be zero, because the DMA clears the FIFO. That means we don't care about the state of that bit - we only need to check RDR, or alternatively the most recent value in DMA memory
@@ -93,7 +150,7 @@ void m_uart_it_handler(uart_it_t * h)
 
 
 //read dma interface for how many bytes to send remain
-uint32_t m_uart_bytes_to_send(uart_it_t * h)
+uint32_t m_uart_bytes_to_send(dma_uart_t * h)
 {
 	return h->txdma->CNDTR;
 }
@@ -102,7 +159,7 @@ uint32_t m_uart_bytes_to_send(uart_it_t * h)
  * DMA Transmit function.
  * Load pointers to memory, length, and enable it
  */
-int m_uart_dma_transmit(uart_it_t * h)
+int m_uart_dma_transmit(dma_uart_t * h)
 {
 	if(h == NULL)
 	{

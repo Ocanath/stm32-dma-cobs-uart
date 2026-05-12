@@ -18,7 +18,7 @@
  *
  *
  * */
-typedef struct uart_it_t
+typedef struct dma_uart_t
 {
 	USART_TypeDef * Instance;
 	DMA_Channel_TypeDef * rxdma;
@@ -33,23 +33,30 @@ typedef struct uart_it_t
 
 	cobs_buf_t tx_mem;	//raw data buffer - encoded
 	dartt_buffer_t tx_buf_alias;	//dartt data buffer - unencoded. encoding invalidates this buffer due to referring to the same memory, so be sure to invalidate by setting this len=0 after an encode.
-}uart_it_t;
-
-
-
-extern uart_it_t m_huart2;
+}dma_uart_t;
 
 enum {ERROR_UART_BAD_INPUT = -1, SUCCESS_UART = 0};
 
-//void m_uart_it_handler(uart_it_t * h);
-void m_uart_it_handler(uart_it_t * h);
-void m_uart_tx_start(uart_it_t * h, uint8_t * buf, int size);
-void m_uart_start_interrupts(uart_it_t * h);
+
+void m_uart_it_handler(dma_uart_t * h);
+void m_uart_tx_start(dma_uart_t * h, uint8_t * buf, int size);
+void m_uart_start_interrupts(dma_uart_t * h);
 void m_uart_rxdma_handler(DMA_HandleTypeDef *hdma);
 void m_uart_txdma_handler(DMA_HandleTypeDef *hdma);
-void m_uart_enable_rx_interrupt(uart_it_t * h);
-void m_uart_disable_rx_interrupt(uart_it_t * h);
-int m_uart_dma_transmit(uart_it_t * h);
-uint32_t m_uart_bytes_to_send(uart_it_t * h);
+void m_uart_enable_rx_interrupt(dma_uart_t * h);
+void m_uart_disable_rx_interrupt(dma_uart_t * h);
+int m_uart_dma_transmit(dma_uart_t * h);
+uint32_t m_uart_bytes_to_send(dma_uart_t * h);
+
+int init_dma_uart(dma_uart_t * h,
+		USART_TypeDef * Instance,
+		DMA_Channel_TypeDef * rxdma,
+		DMA_Channel_TypeDef * txdma,
+		unsigned char * rx_encoded_mem,
+		size_t rx_encoded_mem_size,
+		unsigned char * rx_decoded_mem,
+		size_t rx_decoded_mem_size,
+		unsigned char * tx_mem,
+		size_t tx_mem_size);
 
 #endif /* M_UART_H_ */

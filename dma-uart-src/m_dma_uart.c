@@ -21,6 +21,42 @@
 /*CR1 bits*/
 #define TXEIE		(1 << 7)
 
+
+
+/**/
+void m_uart_start_interrupts(dma_uart_t * h)
+{
+//	h->Instance->CR1 |= (1 << 5) | (1 << 7) | (1 << 2) | (1 << 3);       //enable rxneie, txeie, RE and TE
+//	h->Instance->CR1 &= ~(1 << 7);       //disable TX interrupt
+//	h->Instance->CR1 |= (1 << 4);        //enable IDLE interrupt
+
+	//setup interrupts and UART config
+	h->Instance->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE;
+	h->Instance->CR3 |= USART_CR3_DMAR;
+	h->Instance->CR3 |= USART_CR3_DMAT;
+
+	//setup rxdma
+	h->rxdma->CCR &= ~DMA_CCR_EN;	//disable dma (will often already be disabled. Necessary for writing to CNTR, etc.
+	h->rxdma->CCR |= DMA_CCR_CIRC;
+	h->rxdma->CNDTR = h->rx_mem.size;
+	h->rxdma->CPAR = (uint32_t)(&h->Instance->RDR);
+	h->rxdma->CMAR = (uint32_t)(&h->rx_mem.buf[0]);
+	h->rxdma->CCR |= DMA_CCR_TCIE;
+	h->rxdma->CCR |= DMA_CCR_EN;
+
+	//setup txdma
+	h->txdma->CCR &= ~DMA_CCR_EN;	//disable the dma for writing configuration info
+	h->txdma->CNDTR = 0;
+	h->txdma->CPAR = (uint32_t)(&h->Instance->TDR);
+	h->txdma->CMAR = (uint32_t)(&h->tx_mem.buf[0]);
+	h->txdma->CCR |= DMA_CCR_TCIE;	//enable transfer complete interrupt (and just tc interrupt - no others)
+	h->txdma->CCR |= DMA_CCR_EN;	//re-enable the dma
+
+}
+
+/*
+ * Assign memory aliases and initalize interrupts
+ */
 int init_dma_uart(dma_uart_t * h,
 		USART_TypeDef * Instance,
 		DMA_Channel_TypeDef * rxdma,
@@ -74,40 +110,8 @@ int init_dma_uart(dma_uart_t * h,
 			.size = tx_mem_size,
 			.len = 0
 	};
-
+	m_uart_start_interrupts(h);
 	return 0;
-}
-
-
-/**/
-void m_uart_start_interrupts(dma_uart_t * h)
-{
-//	h->Instance->CR1 |= (1 << 5) | (1 << 7) | (1 << 2) | (1 << 3);       //enable rxneie, txeie, RE and TE
-//	h->Instance->CR1 &= ~(1 << 7);       //disable TX interrupt
-//	h->Instance->CR1 |= (1 << 4);        //enable IDLE interrupt
-
-	//setup interrupts and UART config
-	h->Instance->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE;
-	h->Instance->CR3 |= USART_CR3_DMAR;
-	h->Instance->CR3 |= USART_CR3_DMAT;
-
-	//setup rxdma
-	h->rxdma->CCR &= ~DMA_CCR_EN;	//disable dma (will often already be disabled. Necessary for writing to CNTR, etc.
-	h->rxdma->CCR |= DMA_CCR_CIRC;
-	h->rxdma->CNDTR = h->rx_mem.size;
-	h->rxdma->CPAR = (uint32_t)(&h->Instance->RDR);
-	h->rxdma->CMAR = (uint32_t)(&h->rx_mem.buf[0]);
-	h->rxdma->CCR |= DMA_CCR_TCIE;
-	h->rxdma->CCR |= DMA_CCR_EN;
-
-	//setup txdma
-	h->txdma->CCR &= ~DMA_CCR_EN;	//disable the dma for writing configuration info
-	h->txdma->CNDTR = 0;
-	h->txdma->CPAR = (uint32_t)(&h->Instance->TDR);
-	h->txdma->CMAR = (uint32_t)(&h->tx_mem.buf[0]);
-	h->txdma->CCR |= DMA_CCR_TCIE;	//enable transfer complete interrupt (and just tc interrupt - no others)
-	h->txdma->CCR |= DMA_CCR_EN;	//re-enable the dma
-
 }
 
 

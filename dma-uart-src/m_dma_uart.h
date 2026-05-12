@@ -40,7 +40,6 @@ enum {ERROR_UART_BAD_INPUT = -1, SUCCESS_UART = 0};
 
 void m_uart_it_handler(dma_uart_t * h);
 void m_uart_tx_start(dma_uart_t * h, uint8_t * buf, int size);
-void m_uart_start_interrupts(dma_uart_t * h);
 void m_uart_rxdma_handler(DMA_HandleTypeDef *hdma);
 void m_uart_txdma_handler(DMA_HandleTypeDef *hdma);
 void m_uart_enable_rx_interrupt(dma_uart_t * h);

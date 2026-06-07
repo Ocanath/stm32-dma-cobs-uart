@@ -21,6 +21,10 @@
 /*CR1 bits*/
 #define TXEIE		(1 << 7)
 
+#ifndef USART_CR1_RXNEIE
+#define USART_CR1_RXNEIE  (1 << 5)
+#endif
+
 
 
 /**/
@@ -182,14 +186,14 @@ int m_uart_dma_transmit(dma_uart_t * h)
 
 
 /*m_uart receive dma handler*/
-void m_uart_rxdma_handler(DMA_HandleTypeDef *hdma)
+void m_uart_rxdma_handler(DMA_TypeDef * dma, uint32_t channel_index)
 {
-    hdma->DmaBaseAddress->IFCR = ((uint32_t)DMA_ISR_GIF1 << (hdma->ChannelIndex & 0x1FU));	//global per-channel interrupt clear
+	dma->IFCR = ((uint32_t)DMA_ISR_GIF1 << (channel_index & 0x1FU));	//global per-channel interrupt clear
 }
 
 /*m_uart transmit dma handler*/
-void m_uart_txdma_handler(DMA_HandleTypeDef *hdma)
+void m_uart_txdma_handler(DMA_TypeDef * dma, uint32_t channel_index)
 {
-	hdma->DmaBaseAddress->IFCR = ((uint32_t)DMA_ISR_GIF1 << (hdma->ChannelIndex & 0x1FU));	//global per-channel interrupt clear
+	dma->IFCR = ((uint32_t)DMA_ISR_GIF1 << (channel_index & 0x1FU));	//global per-channel interrupt clear
 }
 

@@ -115,6 +115,8 @@ int init_dma_uart(dma_uart_t * h,
 			.len = 0
 	};
 	m_uart_start_interrupts(h);
+	h->de_port = NULL;//sentinel pointer value
+	h->de_pin = 0;
 	return 0;
 }
 
@@ -153,6 +155,16 @@ void m_uart_it_handler(dma_uart_t * h)
 		h->rx_decode_alias.len = h->rx_decoded.length; //dumb, but we have to copy the length because we have a dartt buffer and cobs buffer. Should really do something to unify these..
 	}
 
+	if(h->de_port != NULL)
+	{
+		uint32_t isr = h->Instance->ISR;
+		uint32_t tc = isr & USART_ISR_TC;
+		if(tc)
+		{
+			HAL_GPIO_WritePin(h->de_port, h->de_pin, 0);
+		}
+	}
+
 	h->Instance->ICR |=  ICR_CLEAR_ALL;	//clear all remaining interrupt flags to avoid a storm
 }
 
@@ -176,6 +188,10 @@ int m_uart_dma_transmit(dma_uart_t * h)
 	if(h->tx_mem.buf == NULL)
 	{
 		return ERROR_UART_BAD_INPUT;
+	}
+	if(h->de_port != NULL)
+	{
+		HAL_GPIO_WritePin(h->de_port, h->de_pin, 1);
 	}
 	h->txdma->CCR &= ~DMA_CCR_EN;
 	h->txdma->CMAR = (uint32_t)(&h->tx_mem.buf[0]);	//ensure pointer is updated. tx_mem.buf might have changed.

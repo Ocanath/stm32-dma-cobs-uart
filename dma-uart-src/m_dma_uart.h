@@ -24,6 +24,9 @@ typedef struct dma_uart_t
 	DMA_Channel_TypeDef * rxdma;
 	DMA_Channel_TypeDef * txdma;
 
+	GPIO_TypeDef * de_port;
+	uint16_t de_pin;
+
 	cobs_buf_t rx_mem;	//raw data buffer, encoded
 	cobs_buf_t rx_decoded;	//cobs unstuffed - decoded buffer
 

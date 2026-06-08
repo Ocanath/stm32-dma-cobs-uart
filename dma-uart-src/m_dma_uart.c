@@ -35,7 +35,7 @@ void m_uart_start_interrupts(dma_uart_t * h)
 //	h->Instance->CR1 |= (1 << 4);        //enable IDLE interrupt
 
 	//setup interrupts and UART config
-	h->Instance->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE;
+	h->Instance->CR1 |= USART_CR1_RE | USART_CR1_TE | USART_CR1_RXNEIE | USART_CR1_TCIE;
 	h->Instance->CR3 |= USART_CR3_DMAR;
 	h->Instance->CR3 |= USART_CR3_DMAT;
 

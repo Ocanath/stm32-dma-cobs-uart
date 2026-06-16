@@ -1,11 +1,11 @@
 # DMA COBS UART
-
-This repository is a source file dump for STM32 DMA based UART handling with byte stuffing.
-
-It submodules byte stuffing, allowing this module to be submoduled as one separate entity for simpler boilerplate projects.
-
-The sources must be linked manually, including byte stuffing sources.
-
+ 
+Source files for DMA-based UART receive and transmit on STM32, with COBS byte stuffing. Designed to be dropped into an STM32CubeIDE project as a linked source folder.
+ 
+## Dependencies
+ 
+Requires [dartt-protocol](https://github.com/ocanath/dartt-protocol) as a peer dependency — it must be submoduled and linked separately. The byte-stuffing library is bundled as a submodule of this repository.
+ 
 ## Linking via STM32CubeIDE
 
 **IMPORTANT:** This library requires [dartt](https://github.com/ocanath/dartt-protocol) as a peer dependency in order to build. Submodule it and link it in you project.
